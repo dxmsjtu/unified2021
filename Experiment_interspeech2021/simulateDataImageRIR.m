@@ -1,5 +1,4 @@
 function [testdata, target_interf_echo] = simulateDataImageRIR(sirdb, serdb, rt60, repeat, seed)
-%
 % Generate test data with simulated rir.
 % sirdb:                specified SIR (dB)
 % serdb:                specified SER (dB)
@@ -10,7 +9,8 @@ function [testdata, target_interf_echo] = simulateDataImageRIR(sirdb, serdb, rt6
 
 addpath('RIR-Generator-master');
 % to reproduce experiments
-rng(seed);
+RandomSeed =0;
+%if RandomSeed ==0 rand('state',12345);  randn('state',12345*3);  end% 保证每次SNR循环，初始种子都一样
 
 %% base directories
 base_target='target/*.wav';

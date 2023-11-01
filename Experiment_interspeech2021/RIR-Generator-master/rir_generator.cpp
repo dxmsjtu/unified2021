@@ -176,8 +176,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     }
     else
     {
-        mexPrintf("Room Impulse Response Generator (Version 2.1.20141124) by Emanuel Habets\n"
-            "Copyright (C) 2003-2014 E.A.P. Habets, The Netherlands.\n");
+      //  mexPrintf("Room Impulse Response Generator (Version 2.1.20141124) by Emanuel Habets\n"
+      //      "Copyright (C) 2003-2014 E.A.P. Habets, The Netherlands.\n");
     }
 
     // Check for proper number of arguments

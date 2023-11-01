@@ -1,12 +1,9 @@
 %    Copyright (C) 2012      Waves Audio LTD
 %    Copyright (C) 2003-2008 Jean-Marc Valin
-%
 %    File: speex_mdf.m
 %    Echo canceller based on the MDF algorithm (see below)
-% 
 %    Redistribution and use in source and binary forms, with or without
-%    modification, are permitted provided that the following conditions are
-%    met:
+%    modification, are permitted provided that the following conditions are met:
 % 
 %    1. Redistributions of source code must retain the above copyright notice,
 %    this list of conditions and the following disclaimer.
@@ -29,85 +26,56 @@
 %    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 %    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 %    POSSIBILITY OF SUCH DAMAGE.
-%
-%    Notes from original mdf.c:
-%
-%    The echo canceller is based on the MDF algorithm described in:
+%%    Notes from original mdf.c:The echo canceller is based on the MDF algorithm described in:
 % 
-%    J. S. Soo, K. K. Pang Multidelay block frequency adaptive filter, 
-%    IEEE Trans. Acoust. Speech Signal Process., Vol. ASSP-38, No. 2, 
-%    February 1990.
-%    
-%    We use the Alternatively Updated MDF (AUMDF) variant. Robustness to 
-%    double-talk is achieved using a variable learning rate as described in:
-%    
-%    Valin, J.-M., On Adjusting the Learning Rate in Frequency Domain Echo 
-%    Cancellation With Double-Talk. IEEE Transactions on Audio,
-%    Speech and Language Processing, Vol. 15, No. 3, pp. 1030-1034, 2007.
-%    http://people.xiph.org/~jm/papers/valin_taslp2006.pdf
+%    J. S. Soo, K. K. Pang Multidelay block frequency adaptive filter, IEEE Trans. Acoust. Speech Signal Process., Vol. ASSP-38, No. 2, 
+%    February 1990. We use the Alternatively Updated MDF (AUMDF) variant. Robustness to 
+%    double-talk is achieved using a variable learning rate as described in:    
+%    Valin, J.-M., On Adjusting the Learning Rate in Frequency Domain Echo Cancellation With Double-Talk. IEEE Transactions on Audio,
+%    Speech and Language Processing, Vol. 15, No. 3, pp. 1030-1034, 2007. http://people.xiph.org/~jm/papers/valin_taslp2006.pdf
 %    
 %    There is no explicit double-talk detection, but a continuous variation
-%    in the learning rate based on residual echo, double-talk and background
-%    noise.
+%    in the learning rate based on residual echo, double-talk and background noise.
 %    
-%    Another kludge that seems to work good: when performing the weight
-%    update, we only move half the way toward the "goal" this seems to
-%    reduce the effect of quantization noise in the update phase. This
-%    can be seen as applying a gradient descent on a "soft constraint"
-%    instead of having a hard constraint.
-%    
+%    Another kludge that seems to work good: when performing the weight update, we only 
+%    the "goal" this seems to move half the way toward reduce the effect of quantization noise
+%    in the update phase. This can be seen as applying a gradient descent on a "soft constraint" 
+%    instead of having a hard constraint.%    
 %    Notes for this file:
-%
-%    Usage: 
-%
-%       speex_mdf_out = speex_mdf(Fs, u, d, filter_length, frame_size, dbg_var_name);
+%%    Usage: 
+%     speex_mdf_out = speex_mdf(Fs, u, d, filter_length, frame_size, dbg_var_name);
 %       
 %       Fs                  sample rate
 %       u                   speaker signal, column vector in range [-1; 1]
 %       d                   microphone signal, column vector in range [-1; 1]
-%       filter_length       typically 250ms, i.e. 4096 @ 16k FS 
-%                           must be a power of 2
-%       frame_size          typically 8ms, i.e. 128 @ 16k Fs 
-%                           must be a power of 2
-%       dbg_var_name        internal state variable name to trace. 
-%                           Default: 'st.leak_estimate'.
-%
-%    Jonathan Rouach <jonr@waves.com>
-%    
+%       filter_length       typically 250ms, i.e. 4096 @ 16k FS must be a power of 2
+%       frame_size          typically 8ms, i.e. 128 @ 16k Fs must be a power of 2
+%       dbg_var_name        internal state variable name to trace.  Default: 'st.leak_estimate'.
+%    Jonathan Rouach <jonr@waves.com>    
 
 function  speex_mdf_out = speex_mdf(Fs, u, d, filter_length, frame_size, dbg_var_name)
-
 fprintf('Starting Speex MDF (PBFDAF) algorithm.\n');
-
 st = speex_echo_state_init_mc_mdf(frame_size, filter_length, 1, 1, Fs);
-
 % which variable to trace
 if nargin<6
     dbg_var_name = 'st.leak_estimate';
 end
 dbg = init_dbg(st, length(u));
-
 [e, dbg] = main_loop(st, float_to_short(u), float_to_short(d), dbg);
-
 speex_mdf_out.e = e/32768.0;
 speex_mdf_out.var1 = dbg.var1;
-
     function x = float_to_short(x)
         x = x*32768.0;
         x(x< -32767.5) = -32768;
         x(x>  32766.5) =  32767;
         x = floor(0.5+x);
     end
-
-    function [e, dbg] = main_loop(st, u, d, dbg)
-        
+    function [e, dbg] = main_loop(st, u, d, dbg)        
         e = zeros(size(u));
-        y = zeros(size(u));
-        
+        y = zeros(size(u));        
         % prepare waitbar
 %         try h_wb = waitbar(0, 'Processing...'); catch; end
-        end_point = length(u);
-        
+        end_point = length(u);        
         for n = 1:st.frame_size:end_point
             nStep = floor(n/st.frame_size)+1;
             
